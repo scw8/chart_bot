@@ -1,0 +1,49 @@
+name: ETF 알림 봇
+
+on:
+  schedule:
+    # 30분마다 실행 (UTC 기준 — 한국은 UTC+9)
+    - cron: '0,30 0-21 * * 1-5'   # 한국 09:00~06:00 평일만
+  workflow_dispatch:                # 수동 실행 버튼
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 가져오기
+      - name: 코드 체크아웃
+        uses: actions/checkout@v3
+
+      # 2. Python 설정
+      - name: Python 설정
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      # 3. 라이브러리 설치
+      - name: 라이브러리 설치
+        run: pip install yfinance finance-datareader python-telegram-bot requests python-dotenv schedule pytz
+
+      # 4. 환경변수 설정
+      - name: 환경변수 설정
+        run: |
+          echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
+          echo "CHAT_ID=${{ secrets.CHAT_ID }}" >> .env
+
+      # 5. 봇 실행
+      - name: 봇 실행
+        run: python main.py
+```
+
+---
+
+## yml 문법 설명
+
+**`cron: '0,30 0-21 * * 1-5'`**
+```
+0,30  → 0분, 30분 (30분마다)
+0-21  → UTC 0시~21시 (한국 9시~06시)
+*     → 매월
+*     → 매일
+1-5   → 월~금 (주말 제외)
