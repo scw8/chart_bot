@@ -1,3 +1,5 @@
+from datetime import datetime
+
 # ETF 목록 (이름: (티커, 통화))
 ETF_LIST = {
     # 국내 ETF
@@ -39,8 +41,17 @@ SCHEDULE_CONFIG = {
     "us_open": "23:30",        # 미국장 시작 리포트
 }
 
-# 장 운영 시간 (변동 체크할 시간대)
+def get_us_market_hours():
+    """써머타임 자동 감지"""
+    import pytz
+    now = datetime.now(pytz.timezone("America/New_York"))
+    # 써머타임이면 EDT(-4), 아니면 EST(-5)
+    if now.dst().seconds > 0:
+        return ("22:30", "05:00")  # 써머타임
+    else:
+        return ("23:30", "06:00")  # 표준시
+
 MARKET_HOURS = {
     "korea": ("09:00", "15:30"),
-    "us": ("23:30", "06:00"),
+    "us": get_us_market_hours(),  # 자동 감지
 }
