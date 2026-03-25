@@ -2,35 +2,63 @@ name: ETF 알림 봇
 
 on:
   schedule:
-    # 30분마다 실행 (UTC 기준 — 한국은 UTC+9)
-    - cron: '0,30 0-21 * * 1-5'   # 한국 09:00~06:00 평일만
-  workflow_dispatch:                # 수동 실행 버튼
+    - cron: '0 0 * * 1-5'       # 09:00 KST 한국장 시작
+    - cron: '0 3 * * 1-5'       # 12:00 KST 한국장 점심
+    - cron: '30 6 * * 1-5'      # 15:30 KST 한국장 마감
+    - cron: '30 14 * * 1-5'     # 23:30 KST 미국장 시작
+    - cron: '0,30 0-21 * * 1-5' # 30분마다 변동 체크
+  workflow_dispatch:
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 코드 가져오기
       - name: 코드 체크아웃
         uses: actions/checkout@v4
 
-      # 2. Python 설정
       - name: Python 설정
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      # 3. 라이브러리 설치
       - name: 라이브러리 설치
         run: pip install yfinance finance-datareader python-telegram-bot requests python-dotenv schedule pytz
 
-      # 4. 환경변수 설정
       - name: 환경변수 설정
         run: |
           echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
           echo "CHAT_ID=${{ secrets.CHAT_ID }}" >> .env
 
-      # 5. 봇 실행
-      - name: 봇 실행
-        run: python main.py
+      - name: 실행 모드 결정 및 봇 실행
+        run: |
+          HOUR=$(date -u +"%H")
+          MIN=$(date -u +"%M")
+
+          if [ "$HOUR" = "00" ] && [ "$MIN" = "00" ]; then
+            python main.py korea_open
+          elif [ "$HOUR" = "03" ] && [ "$MIN" = "00" ]; then
+            python main.py korea_noon
+          elif [ "$HOUR" = "06" ] && [ "$MIN" = "30" ]; then
+            python main.py korea_close
+          elif [ "$HOUR" = "14" ] && [ "$MIN" = "30" ]; then
+            python main.py us_open
+          else
+            python main.py alert
+          fi
+# ```
+
+# ---
+
+# ## 핵심 차이
+# ```
+# # ❌ 기존 — 항상 python main.py만 실행
+# - name: 봇 실행
+#   run: python main.py
+
+# # ✅ 변경 — 시간대별로 다른 모드로 실행
+# - name: 실행 모드 결정 및 봇 실행
+#   run: |
+#     HOUR=$(date -u +"%H")
+#     ...
+#     python main.py korea_open  # 또는 alert, korea_noon 등
