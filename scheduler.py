@@ -1,7 +1,8 @@
 from datetime import datetime
 import pytz
 
-from data import get_all_etf_data
+# from data import get_all_etf_data
+from data import get_all_etf_data, get_etf_data_by_market
 from alerts import check_alerts
 from telegram import send_report, send_alerts
 from config import MARKET_HOURS
@@ -25,7 +26,7 @@ def run_report(title):
     send_report(title, etf_data, exchange_rate)
 
 def run_alert_check():
-    """변동 감지 실행 (장 중에만)"""
+    """변동 감지 실행 (장별로 분리)"""
     now = datetime.now(KST).strftime("%H:%M")
 
     korea_open = is_market_open("korea")
@@ -35,13 +36,20 @@ def run_alert_check():
         print(f"[{now}] 장 외 시간 — 변동 체크 스킵")
         return
 
-    market = "한국장" if korea_open else "미국장"
-    print(f"[{now}] {market} 변동 체크 중...")
+    if korea_open:
+        print(f"[{now}] 한국장 변동 체크 중...")
+        etf_data, exchange_rate = get_etf_data_by_market("korea")
+        alerts = check_alerts(etf_data)
+        if alerts:
+            send_alerts(alerts)
+        else:
+            print(f"[{now}] 한국장 변동 없음")
 
-    etf_data, _ = get_all_etf_data()
-    alerts = check_alerts(etf_data)
-
-    if alerts:
-        send_alerts(alerts)
-    else:
-        print(f"[{now}] 변동 없음")
+    if us_open:
+        print(f"[{now}] 미국장 변동 체크 중...")
+        etf_data, exchange_rate = get_etf_data_by_market("us")
+        alerts = check_alerts(etf_data)
+        if alerts:
+            send_alerts(alerts)
+        else:
+            print(f"[{now}] 미국장 변동 없음")

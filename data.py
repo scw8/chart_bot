@@ -16,6 +16,55 @@ def get_etf_data(ticker):
 
     return df
 
+def get_etf_data_by_market(market):
+    """장별로 ETF 데이터 분리해서 가져오기"""
+    from config import ETF_LIST
+    
+    result = {}
+    exchange_rate = get_exchange_rate()
+
+    for name, (ticker, currency) in ETF_LIST.items():
+        # 한국장이면 KRW만, 미국장이면 USD만
+        if market == "korea" and currency != "KRW":
+            continue
+        if market == "us" and currency != "USD":
+            continue
+
+        df = get_etf_data(ticker)
+
+        if df.empty or len(df) < 20:
+            print(f"{name} ({ticker}) 데이터 부족 — 스킵")
+            continue
+
+        latest_price = df["Close"].iloc[-1]
+        high_30d = df["Close"].tail(30).max()
+        ma20 = df["Close"].tail(20).mean()
+        prev_price = df["Close"].iloc[-2]
+
+        drop_pct = (latest_price - high_30d) / high_30d * 100
+        change_pct = (latest_price - prev_price) / prev_price * 100
+
+        if currency == "KRW":
+            price_str = f"{latest_price:,.0f}원"
+            ma20_str = f"{ma20:,.0f}원"
+        else:
+            krw_price = latest_price * exchange_rate
+            price_str = f"${latest_price:,.2f} (약 {krw_price:,.0f}원)"
+            ma20_str = f"${ma20:,.2f}"
+
+        result[name] = {
+            "ticker": ticker,
+            "currency": currency,
+            "latest_price": latest_price,
+            "ma20": ma20,
+            "drop_pct": drop_pct,
+            "change_pct": change_pct,
+            "price_str": price_str,
+            "ma20_str": ma20_str,
+        }
+
+    return result, exchange_rate
+
 def get_all_etf_data():
 
     """전체 ETF 데이터 딕셔너리로 반환"""
