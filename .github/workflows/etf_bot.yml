@@ -33,18 +33,15 @@ jobs:
 
       - name: 실행 모드 결정 및 봇 실행
         run: |
-          HOUR=$(date -u +"%H")
-          MIN=$(date -u +"%M")
+          SCHEDULE="${{ github.event.schedule }}"
 
-          if [ "$HOUR" = "00" ] && [ "$MIN" = "00" ]; then
+          if [ "$SCHEDULE" = "0 0 * * 1-5" ]; then
             python main.py korea_open
-          elif [ "$HOUR" = "03" ] && [ "$MIN" = "00" ]; then
+          elif [ "$SCHEDULE" = "0 3 * * 1-5" ]; then
             python main.py korea_noon
-          elif [ "$HOUR" = "06" ] && [ "$MIN" = "30" ]; then
+          elif [ "$SCHEDULE" = "30 6 * * 1-5" ]; then
             python main.py korea_close
-          elif [ "$HOUR" = "13" ] && [ "$MIN" = "30" ]; then
-            python main.py us_open
-          elif [ "$HOUR" = "14" ] && [ "$MIN" = "30" ]; then
+          elif [ "$SCHEDULE" = "30 13 * * 1-5" ] || [ "$SCHEDULE" = "30 14 * * 1-5" ]; then
             python main.py us_open
           else
             python main.py alert
