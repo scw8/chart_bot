@@ -1,11 +1,10 @@
 from datetime import datetime
 import pytz
 
-# from data import get_all_etf_data
 from data import get_all_etf_data, get_etf_data_by_market
 from alerts import check_alerts
 from telegram import send_report, send_alerts
-from config import MARKET_HOURS
+from config import MARKET_HOURS, ETF_LIST
 
 KST = pytz.timezone("Asia/Seoul")
 
@@ -19,11 +18,31 @@ def is_market_open(market):
     else:
         return now >= start or now <= end
 
-def run_report(title):
+def _get_predictions(market):
+    """해당 장의 ETF AI 예측 실행"""
+    try:
+        from lstm_test.predictor import predict_market
+        target = {n: v for n, v in ETF_LIST.items()
+                  if (market == "korea" and v[1] == "KRW") or
+                     (market == "us"    and v[1] == "USD")}
+        print(f"[AI 예측] {market}장 ETF {len(target)}종 예측 시작...")
+        return predict_market(target, market=market)
+    except Exception as e:
+        print(f"[AI 예측] 오류 — 예측 없이 리포트 발송: {e}")
+        return {}
+
+def run_report(title, mode="korea_open"):
     """리포트 실행"""
     print(f"[{datetime.now(KST).strftime('%H:%M')}] {title} 실행 중...")
     etf_data, exchange_rate = get_all_etf_data()
-    send_report(title, etf_data, exchange_rate)
+
+    ai_predictions = {}
+    if mode == "korea_close":
+        ai_predictions = _get_predictions("korea")
+    elif mode == "us_close":
+        ai_predictions = _get_predictions("us")
+
+    send_report(title, etf_data, exchange_rate, mode, ai_predictions)
 
 def run_alert_check():
     """변동 감지 실행 (장별로 분리)"""
@@ -38,18 +57,18 @@ def run_alert_check():
 
     if korea_open:
         print(f"[{now}] 한국장 변동 체크 중...")
-        etf_data, exchange_rate = get_etf_data_by_market("korea")
+        etf_data, _ = get_etf_data_by_market("korea")
         alerts = check_alerts(etf_data)
         if alerts:
-            send_alerts(alerts)
+            send_alerts(alerts, market="korea")
         else:
             print(f"[{now}] 한국장 변동 없음")
 
     if us_open:
         print(f"[{now}] 미국장 변동 체크 중...")
-        etf_data, exchange_rate = get_etf_data_by_market("us")
+        etf_data, _ = get_etf_data_by_market("us")
         alerts = check_alerts(etf_data)
         if alerts:
-            send_alerts(alerts)
+            send_alerts(alerts, market="us")
         else:
             print(f"[{now}] 미국장 변동 없음")

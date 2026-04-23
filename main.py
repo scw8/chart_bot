@@ -22,12 +22,14 @@ if __name__ == "__main__":
     if mode == "test":
         test_run()
     elif mode == "korea_open":
-        run_report("📊 한국장 시작 + 미국 마감 요약")
+        run_report("📊 한국장 시작 + 미국 마감 요약", mode="korea_open")
     elif mode == "korea_noon":
-        run_report("📊 한국장 오후 장 현황")
+        run_report("📊 한국장 오후 장 현황", mode="korea_noon")
     elif mode == "korea_close":
-        run_report("📊 한국장 마감 요약")
+        run_report("📊 한국장 마감 요약", mode="korea_close")
     elif mode == "us_open":
-        run_report("📊 미국장 시작")
+        run_report("📊 미국장 시작", mode="us_open")
+    elif mode == "us_close":
+        run_report("📊 미국장 마감 요약", mode="us_close")
     else:
         run_alert_check()

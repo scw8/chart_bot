@@ -7,6 +7,8 @@ on:
     - cron: '30 6 * * 1-5'      # 15:30 KST 한국장 마감
     - cron: '30 13 * * 1-5'     # 22:30 KST 써머타임 미국장 시작
     - cron: '30 14 * * 1-5'     # 23:30 KST 표준시 미국장 시작
+    - cron: '0 20 * * 1-5'      # 05:00 KST 써머타임 미국장 마감
+    - cron: '0 21 * * 1-5'      # 06:00 KST 표준시 미국장 마감
     - cron: '0,30 0-21 * * 1-5' # 30분마다 변동 체크
   workflow_dispatch:
 
@@ -24,12 +26,14 @@ jobs:
           python-version: '3.12'
 
       - name: 라이브러리 설치
-        run: pip install yfinance finance-datareader python-telegram-bot requests python-dotenv schedule pytz
+        run: pip install yfinance finance-datareader python-telegram-bot requests python-dotenv schedule pytz xgboost scikit-learn supabase
 
       - name: 환경변수 설정
         run: |
           echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
           echo "CHAT_ID=${{ secrets.CHAT_ID }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
 
       - name: 실행 모드 결정 및 봇 실행
         run: |
@@ -43,6 +47,8 @@ jobs:
             python main.py korea_close
           elif [ "$SCHEDULE" = "30 13 * * 1-5" ] || [ "$SCHEDULE" = "30 14 * * 1-5" ]; then
             python main.py us_open
+          elif [ "$SCHEDULE" = "0 20 * * 1-5" ] || [ "$SCHEDULE" = "0 21 * * 1-5" ]; then
+            python main.py us_close
           else
             python main.py alert
           fi
