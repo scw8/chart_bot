@@ -4,9 +4,8 @@ from config import ALERT_CONFIG
 PRIORITY = {
     "강력": 1,
     "급락": 2,
-    "공격적": 3,
-    "매수고려": 4,
-    "급등": 5,
+    "매수고려": 3,
+    "급등": 4,
 }
 
 def check_alerts(etf_data):
@@ -18,24 +17,19 @@ def check_alerts(etf_data):
         if result:
             alerts.append(result)
 
-    # 우선순위 기준 정렬
     alerts.sort(key=lambda x: x["priority"])
 
-    # 카테고리별 분류해서 메시지 만들기
     message_parts = []
 
-    강력 = [a for a in alerts if a["priority"] == 1]
-    급락 = [a for a in alerts if a["priority"] == 2]
-    공격적 = [a for a in alerts if a["priority"] == 3]
-    매수고려 = [a for a in alerts if a["priority"] == 4]
-    급등 = [a for a in alerts if a["priority"] == 5]
+    강력 = [a for a in alerts if a["priority"] == PRIORITY["강력"]]
+    급락 = [a for a in alerts if a["priority"] == PRIORITY["급락"]]
+    매수고려 = [a for a in alerts if a["priority"] == PRIORITY["매수고려"]]
+    급등 = [a for a in alerts if a["priority"] == PRIORITY["급등"]]
 
     if 강력:
-        message_parts.append("🚨 <b>강력 매수 신호</b>\n" + "\n\n".join(a["message"] for a in 강력))
+        message_parts.append("🚨 <b>강한 매수 타이밍 (고점대비 -5% 이상)</b>\n" + "\n\n".join(a["message"] for a in 강력))
     if 급락:
         message_parts.append("🔻 <b>급락 감지</b>\n" + "\n\n".join(a["message"] for a in 급락))
-    if 공격적:
-        message_parts.append("⚡️ <b>공격적 매수 신호</b>\n" + "\n\n".join(a["message"] for a in 공격적))
     if 매수고려:
         message_parts.append("📉 <b>매수 고려</b>\n" + "\n\n".join(a["message"] for a in 매수고려))
     if 급등:
@@ -61,30 +55,27 @@ def get_signal(name, data):
     priority = 99
 
     if is_below_ma20 and is_drop_5pct:
-        signals.append(f"🚨 강력 매수 신호 (20일선 하향 + 고점대비 {drop_pct:.1f}% 하락)")
+        signals.append(f"20일선 하향 + 고점대비 {drop_pct:.1f}% 하락")
         priority = min(priority, PRIORITY["강력"])
     elif is_below_ma20:
-        signals.append(f"📉 매수 고려 (20일선 하향 돌파, 고점대비 {drop_pct:.1f}%)")
+        signals.append(f"20일선 하향 (고점대비 {drop_pct:.1f}%)")
         priority = min(priority, PRIORITY["매수고려"])
-    elif is_drop_5pct:
-        signals.append(f"⚡️ 공격적 매수 신호 (고점대비 {drop_pct:.1f}% 하락)")
-        priority = min(priority, PRIORITY["공격적"])
 
     if is_sudden_up:
-        signals.append(f"🔺 급등 감지 (+{change_pct:.1f}%)")
+        signals.append(f"급등 +{change_pct:.1f}%")
         priority = min(priority, PRIORITY["급등"])
     elif is_sudden_down:
-        signals.append(f"🔻 급락 감지 ({change_pct:.1f}%)")
+        signals.append(f"급락 {change_pct:.1f}%")
         priority = min(priority, PRIORITY["급락"])
 
     if not signals:
         return None
 
     message = (
-        f"⚠️ <b>{name}</b>\n"
-        f"   현재가: {price_str}\n"
-        f"   20일선: {ma20_str}\n"
-        f"   " + "\n   ".join(signals)
+        f"<b>{name}</b>\n"
+        f"   현재가: {price_str} | 20일선: {ma20_str}\n"
+        f"   고점대비: {drop_pct:.1f}% | 전일대비: {change_pct:+.1f}%\n"
+        f"   → " + " / ".join(signals)
     )
 
     return {"priority": priority, "message": message}

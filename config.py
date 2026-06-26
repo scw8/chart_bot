@@ -7,6 +7,13 @@ ETF_LIST = {
     "TIGER 미국S&P500": ("360750.KS", "KRW"),
     "KODEX S&P500": ("379800.KS", "KRW"),
 
+    # 국내 개별 주식
+    "삼성전자": ("005930.KS", "KRW"),
+    "SK하이닉스": ("000660.KS", "KRW"),
+
+    # 삼성전자+SK하이닉스 채권혼합 ETF
+    "KODEX 삼성전자SK하이닉스채권혼합50": ("0177N0.KS", "KRW"),
+
     # 해외 ETF - S&P500 계열
     "SPY": ("SPY", "USD"),
     "SPLG": ("SPLG", "USD"),
